@@ -3,7 +3,7 @@ import Foundation
 import Virtualization
 
 @MainActor
-class VPhoneWindowController: NSObject, NSToolbarDelegate {
+class VPhoneWindowController: NSObject, NSToolbarDelegate, NSWindowDelegate {
     private var windowController: NSWindowController?
     private var statusTimer: Timer?
     private weak var control: VPhoneControl?
@@ -48,7 +48,15 @@ class VPhoneWindowController: NSObject, NSToolbarDelegate {
         window.contentAspectRatio = windowSize
         window.title = "VPHONE [loading]"
         window.subtitle = makeSubtitle(ip: nil)
-        window.contentView = vmView
+        window.delegate = self
+
+        // Host the VM view inside a container so it can be rotated/resized
+        // within it without disturbing the window's own content view.
+        let container = NSView(frame: NSRect(origin: .zero, size: windowSize))
+        vmView.frame = container.bounds
+        container.addSubview(vmView)
+        view.baseContentSize = windowSize
+        window.contentView = container
         if let ecid {
             if !window.setFrameAutosaveName("vphone-\(ecid)") {
                 window.center()
@@ -94,6 +102,14 @@ class VPhoneWindowController: NSObject, NSToolbarDelegate {
         case let (ecid?, nil): ecid
         case let (nil, ip?): ip
         case (nil, nil): ""
+        }
+    }
+
+    // MARK: - NSWindowDelegate
+
+    nonisolated func windowDidResize(_: Notification) {
+        MainActor.assumeIsolated {
+            virtualMachineView?.relayoutForCurrentRotation()
         }
     }
 

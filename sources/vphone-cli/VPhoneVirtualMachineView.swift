@@ -10,6 +10,63 @@ class VPhoneVirtualMachineView: VZVirtualMachineView {
     private var currentTouchSwipeAim: Int = 0
     private var isDragHighlightVisible = false
 
+    // MARK: - Host-side Display Rotation
+
+    /// Clockwise rotation of the displayed framebuffer in degrees (0/90/180/270).
+    /// Host-side only: rotates what the window shows so a guest app rendering
+    /// "on its side" (e.g. an iPad app forced to landscape) appears upright, and
+    /// reshapes the window to match. The guest is told nothing — this is purely
+    /// how the framebuffer is presented. Touch stays correct because rotation is
+    /// applied via `frameRotation`, which AppKit's coordinate conversion honors.
+    private(set) var displayRotation: Int = 0
+
+    /// Unrotated content size (points) the window was created at; used to derive
+    /// the rotated window size. Set by the window controller.
+    var baseContentSize: NSSize = .zero
+
+    func rotateDisplay(byDegrees delta: Int) {
+        setDisplayRotation(displayRotation + delta)
+    }
+
+    func setDisplayRotation(_ degrees: Int) {
+        displayRotation = ((degrees % 360) + 360) % 360
+        applyDisplayRotation()
+    }
+
+    /// Re-run the current rotation layout (e.g. after a window resize).
+    func relayoutForCurrentRotation() {
+        guard let container = superview else { return }
+        layoutRotatedFrame(in: container.bounds)
+    }
+
+    private func applyDisplayRotation() {
+        guard let container = superview, let window else { return }
+        let base = (baseContentSize == .zero) ? bounds.size : baseContentSize
+        let sideways = (displayRotation == 90 || displayRotation == 270)
+        let target = sideways ? NSSize(width: base.height, height: base.width) : base
+
+        window.contentAspectRatio = target
+        window.setContentSize(target)
+        container.frame = NSRect(origin: .zero, size: target)
+        layoutRotatedFrame(in: container.bounds)
+    }
+
+    private func layoutRotatedFrame(in containerBounds: NSRect) {
+        frameRotation = 0
+        let sideways = (displayRotation == 90 || displayRotation == 270)
+        let size = sideways
+            ? NSSize(width: containerBounds.height, height: containerBounds.width)
+            : containerBounds.size
+        setFrameSize(size)
+        setFrameOrigin(NSPoint(
+            x: (containerBounds.width - size.width) / 2,
+            y: (containerBounds.height - size.height) / 2
+        ))
+        if displayRotation != 0 {
+            setFrameCenterRotation(CGFloat(displayRotation))
+        }
+    }
+
     // MARK: - Private API Accessors
 
     /// https://github.com/wh1te4ever/super-tart-vphone-writeup/blob/main/contents/ScreenSharingVNC.swift
