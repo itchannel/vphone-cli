@@ -46,8 +46,22 @@ class VPhoneVirtualMachineView: VZVirtualMachineView {
         let target = sideways ? NSSize(width: base.height, height: base.width) : base
 
         window.contentAspectRatio = target
-        window.setContentSize(target)
-        container.frame = NSRect(origin: .zero, size: target)
+
+        // Resize the window's content area to the rotated size, keeping the top
+        // edge fixed. Using setFrame (with frameRect(forContentRect:) to account
+        // for the title bar) reliably resizes the window, where setContentSize
+        // can be constrained; the content view then reflects `target` before we
+        // lay out the rotated framebuffer.
+        let oldFrame = window.frame
+        let newContentFrame = window.frameRect(forContentRect: NSRect(origin: .zero, size: target))
+        let newFrame = NSRect(
+            x: oldFrame.minX,
+            y: oldFrame.maxY - newContentFrame.height,
+            width: newContentFrame.width,
+            height: newContentFrame.height
+        )
+        window.setFrame(newFrame, display: true, animate: false)
+
         layoutRotatedFrame(in: container.bounds)
     }
 
