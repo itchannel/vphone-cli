@@ -28,7 +28,7 @@ public final class KernelJBPatcher: KernelJBPatcherBase, Patcher {
     public var applyFrida = false
 
     public func findAll() throws -> [PatchRecord] {
-        try parseMachO()
+        parseMachO()
         buildADRPIndex()
         buildBLIndex()
         buildSymbolTable()
