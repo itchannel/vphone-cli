@@ -58,13 +58,22 @@ class VPhoneVirtualMachineView: VZVirtualMachineView {
             ? NSSize(width: containerBounds.height, height: containerBounds.width)
             : containerBounds.size
         setFrameSize(size)
-        setFrameOrigin(NSPoint(
-            x: (containerBounds.width - size.width) / 2,
-            y: (containerBounds.height - size.height) / 2
-        ))
-        if displayRotation != 0 {
-            setFrameCenterRotation(CGFloat(displayRotation))
+
+        guard displayRotation != 0 else {
+            setFrameOrigin(.zero)
+            return
         }
+
+        // `frameRotation` rotates about the frame's origin, not its center, so
+        // place the origin such that the view's center lands at the container
+        // center after rotation. (theta is CCW-positive, matching frameRotation.)
+        let theta = CGFloat(displayRotation) * .pi / 180
+        let center = CGPoint(x: containerBounds.width / 2, y: containerBounds.height / 2)
+        let half = CGPoint(x: size.width / 2, y: size.height / 2)
+        let rotatedHalfX = cos(theta) * half.x - sin(theta) * half.y
+        let rotatedHalfY = sin(theta) * half.x + cos(theta) * half.y
+        setFrameOrigin(NSPoint(x: center.x - rotatedHalfX, y: center.y - rotatedHalfY))
+        frameRotation = CGFloat(displayRotation)
     }
 
     // MARK: - Private API Accessors
