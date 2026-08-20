@@ -28,5 +28,7 @@ void vp_hid_touch(int phase, double x, double y);
 /// their own; feeding a gravity vector through the HID event system is what a
 /// physical device's accelerometer does. `orientation` uses UIDeviceOrientation
 /// values: 1 = portrait, 2 = portrait upside-down, 3 = landscape-left,
-/// 4 = landscape-right. No-op (logged) if the accelerometer symbol is absent.
-void vp_hid_orientation(int orientation);
+/// 4 = landscape-right.
+/// Returns: 0 = dispatched, -1 = accelerometer symbol unavailable,
+/// -2 = event creation returned NULL, -3 = unknown orientation value.
+int vp_hid_orientation(int orientation);

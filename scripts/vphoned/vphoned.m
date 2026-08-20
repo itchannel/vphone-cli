@@ -211,8 +211,17 @@ static NSDictionary *handle_command(NSDictionary *msg) {
 
   if ([type isEqualToString:@"orient"]) {
     int orientation = [msg[@"orientation"] intValue];
-    vp_hid_orientation(orientation);
-    return vp_make_response(@"ok", reqId);
+    int rc = vp_hid_orientation(orientation);
+    NSMutableDictionary *r = vp_make_response(rc == 0 ? @"ok" : @"err", reqId);
+    r[@"code"] = @(rc);
+    switch (rc) {
+    case 0:  r[@"msg"] = @"orientation dispatched"; break;
+    case -1: r[@"msg"] = @"accelerometer symbol unavailable"; break;
+    case -2: r[@"msg"] = @"accelerometer event creation returned NULL"; break;
+    case -3: r[@"msg"] = @"unknown orientation value"; break;
+    default: r[@"msg"] = @"unknown error"; break;
+    }
+    return r;
   }
 
   if ([type isEqualToString:@"devmode"]) {

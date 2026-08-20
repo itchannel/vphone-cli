@@ -155,10 +155,10 @@ void vp_hid_touch(int phase, double x, double y) {
     }
 }
 
-void vp_hid_orientation(int orientation) {
+int vp_hid_orientation(int orientation) {
     if (!pAccel) {
         NSLog(@"vphoned: orientation ignored, accelerometer symbol unavailable");
-        return;
+        return -1;
     }
 
     // Gravity vector (g) for each UIDeviceOrientation. Signs are the first
@@ -172,7 +172,7 @@ void vp_hid_orientation(int orientation) {
     case 4: x = -1; y =  0; z = 0; break; // landscape-right
     default:
         NSLog(@"vphoned: unknown orientation %d", orientation);
-        return;
+        return -3;
     }
 
     // A single reading may be filtered by SpringBoard's orientation smoothing;
@@ -184,7 +184,7 @@ void vp_hid_orientation(int orientation) {
                                   x, y, z, 0, 0);
         if (!ev) {
             NSLog(@"vphoned: IOHIDEventCreateAccelerometerEvent returned NULL");
-            return;
+            return -2;
         }
         send_hid_event(ev);
         CFRelease(ev);
@@ -193,4 +193,5 @@ void vp_hid_orientation(int orientation) {
 
     NSLog(@"vphoned: orientation %d dispatched (g=%.1f,%.1f,%.1f)",
           orientation, (double)x, (double)y, (double)z);
+    return 0;
 }
