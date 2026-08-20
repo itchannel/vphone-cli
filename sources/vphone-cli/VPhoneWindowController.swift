@@ -54,6 +54,11 @@ class VPhoneWindowController: NSObject, NSToolbarDelegate, NSWindowDelegate {
         // within it without disturbing the window's own content view.
         let container = NSView(frame: NSRect(origin: .zero, size: windowSize))
         vmView.frame = container.bounds
+        // Fill the container by default (rotation 0). The window may open at a
+        // restored autosave size that differs from windowSize, so the view must
+        // track the container rather than keep a fixed frame. Rotation turns
+        // this off and manages the frame manually.
+        vmView.autoresizingMask = [.width, .height]
         container.addSubview(vmView)
         view.baseContentSize = windowSize
         window.contentView = container

@@ -67,16 +67,22 @@ class VPhoneVirtualMachineView: VZVirtualMachineView {
 
     private func layoutRotatedFrame(in containerBounds: NSRect) {
         frameRotation = 0
+
+        // Unrotated: let autoresizing fill the container (survives restored
+        // autosave sizes and live resizes without manual relayout).
+        guard displayRotation != 0 else {
+            autoresizingMask = [.width, .height]
+            frame = containerBounds
+            return
+        }
+
+        // Rotated: take over the frame manually.
+        autoresizingMask = []
         let sideways = (displayRotation == 90 || displayRotation == 270)
         let size = sideways
             ? NSSize(width: containerBounds.height, height: containerBounds.width)
             : containerBounds.size
         setFrameSize(size)
-
-        guard displayRotation != 0 else {
-            setFrameOrigin(.zero)
-            return
-        }
 
         // `frameRotation` rotates about the frame's origin, not its center, so
         // place the origin such that the view's center lands at the container
