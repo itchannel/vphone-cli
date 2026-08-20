@@ -32,3 +32,9 @@ void vp_hid_touch(int phase, double x, double y);
 /// Returns: 0 = dispatched, -1 = accelerometer symbol unavailable,
 /// -2 = event creation returned NULL, -3 = unknown orientation value.
 int vp_hid_orientation(int orientation);
+
+/// Whether iOS reports an accelerometer sensor in this VM (via CoreMotion).
+/// If NO, there is no orientation pipeline for injected accelerometer events to
+/// feed — autorotation cannot work through the sensor path and needs a virtual
+/// HID accelerometer device (or a SpringBoard-level override) instead.
+BOOL vp_accel_available(void);

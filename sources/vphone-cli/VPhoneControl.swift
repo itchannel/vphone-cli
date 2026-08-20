@@ -336,7 +336,10 @@ class VPhoneControl {
                 let (resp, _) = try await self.sendRequest(["t": "orient", "orientation": orientation])
                 let code = (resp["code"] as? Int) ?? -99
                 let msg = (resp["msg"] as? String) ?? "(no message)"
-                print("[control] orient \(orientation) ← code \(code): \(msg)")
+                let accel = (resp["accel_available"] as? Bool)
+                    ?? (resp["accel_available"] as? Int).map { $0 != 0 }
+                let accelStr = accel.map { $0 ? "yes" : "no" } ?? "?"
+                print("[control] orient \(orientation) ← code \(code): \(msg) [accelerometer present: \(accelStr)]")
             } catch {
                 print("[control] orient \(orientation) failed: \(error)")
             }

@@ -214,6 +214,7 @@ static NSDictionary *handle_command(NSDictionary *msg) {
     int rc = vp_hid_orientation(orientation);
     NSMutableDictionary *r = vp_make_response(rc == 0 ? @"ok" : @"err", reqId);
     r[@"code"] = @(rc);
+    r[@"accel_available"] = @(vp_accel_available());
     switch (rc) {
     case 0:  r[@"msg"] = @"orientation dispatched"; break;
     case -1: r[@"msg"] = @"accelerometer symbol unavailable"; break;

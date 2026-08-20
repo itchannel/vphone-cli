@@ -1,4 +1,5 @@
 #import "vphoned_hid.h"
+#import <CoreMotion/CoreMotion.h>
 #include <dlfcn.h>
 #include <mach/mach_time.h>
 #include <unistd.h>
@@ -194,4 +195,13 @@ int vp_hid_orientation(int orientation) {
     NSLog(@"vphoned: orientation %d dispatched (g=%.1f,%.1f,%.1f)",
           orientation, (double)x, (double)y, (double)z);
     return 0;
+}
+
+BOOL vp_accel_available(void) {
+    CMMotionManager *mgr = [[CMMotionManager alloc] init];
+    BOOL accel = mgr.accelerometerAvailable;
+    BOOL motion = mgr.deviceMotionAvailable;
+    NSLog(@"vphoned: CoreMotion accelerometerAvailable=%d deviceMotionAvailable=%d",
+          accel, motion);
+    return accel;
 }
