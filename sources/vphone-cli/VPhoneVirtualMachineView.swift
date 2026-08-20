@@ -62,7 +62,11 @@ class VPhoneVirtualMachineView: VZVirtualMachineView {
         )
         window.setFrame(newFrame, display: true, animate: false)
 
-        layoutRotatedFrame(in: container.bounds)
+        // Lay out against the known target size rather than container.bounds,
+        // which may not reflect the resize synchronously and would size the
+        // framebuffer slightly wrong (clipping an edge).
+        container.frame = NSRect(origin: .zero, size: target)
+        layoutRotatedFrame(in: NSRect(origin: .zero, size: target))
     }
 
     private func layoutRotatedFrame(in containerBounds: NSRect) {
