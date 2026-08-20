@@ -209,6 +209,12 @@ static NSDictionary *handle_command(NSDictionary *msg) {
     return vp_make_response(@"ok", reqId);
   }
 
+  if ([type isEqualToString:@"orient"]) {
+    int orientation = [msg[@"orientation"] intValue];
+    vp_hid_orientation(orientation);
+    return vp_make_response(@"ok", reqId);
+  }
+
   if ([type isEqualToString:@"devmode"]) {
     if (!vp_devmode_available()) {
       NSMutableDictionary *r = vp_make_response(@"err", reqId);

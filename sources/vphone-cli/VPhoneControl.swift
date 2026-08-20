@@ -321,6 +321,24 @@ class VPhoneControl {
         }
     }
 
+    /// Drive guest device orientation by injecting a synthetic accelerometer
+    /// reading. `orientation` uses UIDeviceOrientation values: 1 = portrait,
+    /// 2 = portrait upside-down, 3 = landscape-left, 4 = landscape-right.
+    func sendOrientation(_ orientation: Int) {
+        nextRequestId += 1
+        let msg: [String: Any] = [
+            "v": Self.protocolVersion,
+            "t": "orient",
+            "id": String(nextRequestId, radix: 16),
+            "orientation": orientation,
+        ]
+        guard let fd = connection?.fileDescriptor, writeMessage(fd: fd, dict: msg) else {
+            print("[control] orient send failed (not connected)")
+            return
+        }
+        print("[control] orient \(orientation)")
+    }
+
     // MARK: - Developer Mode
 
     struct DevModeStatus {

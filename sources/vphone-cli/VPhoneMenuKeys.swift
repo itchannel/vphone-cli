@@ -14,6 +14,17 @@ extension VPhoneMenuController {
         menu.addItem(NSMenuItem.separator())
         menu.addItem(makeItem("Spotlight (Cmd+Space)", action: #selector(sendSpotlight)))
         menu.addItem(NSMenuItem.separator())
+
+        let orientationItem = NSMenuItem()
+        let orientationMenu = NSMenu(title: "Orientation")
+        orientationMenu.addItem(makeItem("Portrait", action: #selector(orientPortrait)))
+        orientationMenu.addItem(makeItem("Portrait Upside Down", action: #selector(orientPortraitUpsideDown)))
+        orientationMenu.addItem(makeItem("Landscape Left", action: #selector(orientLandscapeLeft)))
+        orientationMenu.addItem(makeItem("Landscape Right", action: #selector(orientLandscapeRight)))
+        orientationItem.title = "Orientation"
+        orientationItem.submenu = orientationMenu
+        menu.addItem(orientationItem)
+        menu.addItem(NSMenuItem.separator())
         menu.addItem(makeItem("Type ASCII from Clipboard", action: #selector(typeFromClipboard)))
         menu.addItem(NSMenuItem.separator())
         let tidItem = makeItem("Touch ID Home Forwarding", action: #selector(toggleTouchIDForwarding))
@@ -48,6 +59,22 @@ extension VPhoneMenuController {
 
     @objc func sendSpotlight() {
         keyHelper.sendSpotlight()
+    }
+
+    @objc func orientPortrait() {
+        keyHelper.sendOrientation(.portrait)
+    }
+
+    @objc func orientPortraitUpsideDown() {
+        keyHelper.sendOrientation(.portraitUpsideDown)
+    }
+
+    @objc func orientLandscapeLeft() {
+        keyHelper.sendOrientation(.landscapeLeft)
+    }
+
+    @objc func orientLandscapeRight() {
+        keyHelper.sendOrientation(.landscapeRight)
     }
 
     @objc func typeFromClipboard() {

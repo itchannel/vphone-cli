@@ -22,3 +22,11 @@ void vp_hid_key(uint32_t page, uint32_t usage, BOOL down);
 /// origin at the top-left. Used for iOS 18 bases where the VZ USB touchscreen
 /// dext produces no digitizer events on the 26.x kernel.
 void vp_hid_touch(int phase, double x, double y);
+
+/// Inject a synthetic accelerometer reading to drive device orientation.
+/// The VM has no real motion sensor, so SpringBoard/UIKit never autorotate on
+/// their own; feeding a gravity vector through the HID event system is what a
+/// physical device's accelerometer does. `orientation` uses UIDeviceOrientation
+/// values: 1 = portrait, 2 = portrait upside-down, 3 = landscape-left,
+/// 4 = landscape-right. No-op (logged) if the accelerometer symbol is absent.
+void vp_hid_orientation(int orientation);

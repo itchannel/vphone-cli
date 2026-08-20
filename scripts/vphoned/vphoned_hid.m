@@ -24,6 +24,13 @@ static IOHIDEventRef (*pFinger)(CFAllocatorRef, uint64_t, uint32_t, uint32_t,
 static void (*pAppend)(IOHIDEventRef, IOHIDEventRef, uint32_t);
 static void (*pSetInt)(IOHIDEventRef, uint32_t, int);
 
+// Accelerometer event symbol — resolved lazily; orientation is a no-op if absent.
+// Commonly-cited prototype: (allocator, timestamp, x, y, z, type, options).
+// type = kIOHIDAccelerometerTypeNormal (0), options = 0. Signature/field
+// semantics are validated on-device — see vp_hid_orientation.
+static IOHIDEventRef (*pAccel)(CFAllocatorRef, uint64_t, IOHIDFloat, IOHIDFloat,
+                               IOHIDFloat, uint32_t, uint32_t);
+
 static IOHIDEventSystemClientRef gClient;
 static dispatch_queue_t gHIDQueue;
 
@@ -51,12 +58,16 @@ BOOL vp_hid_load(void) {
     pAppend    = dlsym(h, "IOHIDEventAppendEvent");
     pSetInt    = dlsym(h, "IOHIDEventSetIntegerValue");
 
+    pAccel     = dlsym(h, "IOHIDEventCreateAccelerometerEvent");
+
     if (!pCreate || !pKeyboard || !pSetSender || !pDispatch) {
         NSLog(@"vphoned: missing IOKit symbols");
         return NO;
     }
     if (!pDigitizer || !pFinger || !pAppend || !pSetInt)
         NSLog(@"vphoned: digitizer symbols missing, touch injection disabled");
+    if (!pAccel)
+        NSLog(@"vphoned: accelerometer symbol missing, orientation disabled");
 
     gClient = pCreate(kCFAllocatorDefault);
     if (!gClient) { NSLog(@"vphoned: IOHIDEventSystemClientCreate returned NULL"); return NO; }
@@ -142,4 +153,44 @@ void vp_hid_touch(int phase, double x, double y) {
         dispatch_digitizer(x, y, 0, 0, VP_DIG_TOUCH | VP_DIG_IDENTITY);
         break;
     }
+}
+
+void vp_hid_orientation(int orientation) {
+    if (!pAccel) {
+        NSLog(@"vphoned: orientation ignored, accelerometer symbol unavailable");
+        return;
+    }
+
+    // Gravity vector (g) for each UIDeviceOrientation. Signs are the first
+    // hypothesis to validate on-device: if a rotation lands mirrored or 180°
+    // off, flip the axis here rather than anywhere else in the pipeline.
+    IOHIDFloat x = 0, y = -1, z = 0;
+    switch (orientation) {
+    case 1: x =  0; y = -1; z = 0; break; // portrait (home bar at bottom)
+    case 2: x =  0; y =  1; z = 0; break; // portrait upside-down
+    case 3: x =  1; y =  0; z = 0; break; // landscape-left
+    case 4: x = -1; y =  0; z = 0; break; // landscape-right
+    default:
+        NSLog(@"vphoned: unknown orientation %d", orientation);
+        return;
+    }
+
+    // A single reading may be filtered by SpringBoard's orientation smoothing;
+    // send a short burst so the gravity vector reads as stable. Tune the count
+    // on-device — this is the other knob (besides the signs above) most likely
+    // to need adjusting.
+    for (int i = 0; i < 5; i++) {
+        IOHIDEventRef ev = pAccel(kCFAllocatorDefault, mach_absolute_time(),
+                                  x, y, z, 0, 0);
+        if (!ev) {
+            NSLog(@"vphoned: IOHIDEventCreateAccelerometerEvent returned NULL");
+            return;
+        }
+        send_hid_event(ev);
+        CFRelease(ev);
+        usleep(20000); // 20ms between samples (~50 Hz)
+    }
+
+    NSLog(@"vphoned: orientation %d dispatched (g=%.1f,%.1f,%.1f)",
+          orientation, (double)x, (double)y, (double)z);
 }

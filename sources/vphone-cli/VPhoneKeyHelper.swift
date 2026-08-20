@@ -79,6 +79,21 @@ class VPhoneKeyHelper {
         control.sendHIDPress(page: 0x0C, usage: 0xEA)
     }
 
+    // MARK: - Device Orientation
+
+    /// UIDeviceOrientation raw values understood by the guest daemon.
+    enum DeviceOrientation: Int {
+        case portrait = 1
+        case portraitUpsideDown = 2
+        case landscapeLeft = 3
+        case landscapeRight = 4
+    }
+
+    func sendOrientation(_ orientation: DeviceOrientation) {
+        guard requireConnection() else { return }
+        control.sendOrientation(orientation.rawValue)
+    }
+
     // MARK: - Combos
 
     func sendSpotlight() {
