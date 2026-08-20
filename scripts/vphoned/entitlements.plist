@@ -45,6 +45,8 @@
 	<true/>
 	<key>com.apple.developer.networking.HotspotHelper</key>
 	<true/>
+	<key>com.apple.developer.hid.virtual.device</key>
+	<true/>
 	<key>com.apple.developer.networking.vpn.api</key>
 	<array>
 		<string>allow-vpn</string>
@@ -499,6 +501,7 @@
 		<string>IOGPUDeviceUserClient</string>
 		<string>IOHIDEventServiceFastPathUserClient</string>
 		<string>IOHIDLibUserClient</string>
+		<string>IOHIDResourceDeviceUserClient</string>
 		<string>IOMobileFramebufferUserClient</string>
 		<string>IOReportUserClient</string>
 		<string>IOSurfaceAcceleratorClient</string>

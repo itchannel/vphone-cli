@@ -24,6 +24,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#import "vphoned_accel.h"
 #import "vphoned_accessibility.h"
 #import "vphoned_apps.h"
 #import "vphoned_clipboard.h"
@@ -211,16 +212,27 @@ static NSDictionary *handle_command(NSDictionary *msg) {
 
   if ([type isEqualToString:@"orient"]) {
     int orientation = [msg[@"orientation"] intValue];
-    int rc = vp_hid_orientation(orientation);
+
+    // Prefer the virtual accelerometer (real sensor path); fall back to raw HID
+    // event injection when the virtual device could not be created.
+    BOOL viaVirtual = vp_accel_set_orientation(orientation);
+    int rc = viaVirtual ? 0 : vp_hid_orientation(orientation);
+
     NSMutableDictionary *r = vp_make_response(rc == 0 ? @"ok" : @"err", reqId);
     r[@"code"] = @(rc);
+    r[@"method"] = viaVirtual ? @"virtual_accel" : @"hid_inject";
+    r[@"virtual_accel_active"] = @(vp_accel_active());
     r[@"accel_available"] = @(vp_accel_available());
-    switch (rc) {
-    case 0:  r[@"msg"] = @"orientation dispatched"; break;
-    case -1: r[@"msg"] = @"accelerometer symbol unavailable"; break;
-    case -2: r[@"msg"] = @"accelerometer event creation returned NULL"; break;
-    case -3: r[@"msg"] = @"unknown orientation value"; break;
-    default: r[@"msg"] = @"unknown error"; break;
+    if (viaVirtual) {
+      r[@"msg"] = @"orientation set via virtual accelerometer";
+    } else {
+      switch (rc) {
+      case 0:  r[@"msg"] = @"orientation dispatched via HID injection"; break;
+      case -1: r[@"msg"] = @"accelerometer symbol unavailable"; break;
+      case -2: r[@"msg"] = @"accelerometer event creation returned NULL"; break;
+      case -3: r[@"msg"] = @"unknown orientation value"; break;
+      default: r[@"msg"] = @"unknown error"; break;
+      }
     }
     return r;
   }
@@ -504,6 +516,9 @@ int main(int argc, char *argv[]) {
 
     if (!vp_hid_load())
       return 1;
+    if (!vp_accel_create())
+      NSLog(@"vphoned: virtual accelerometer unavailable, orientation limited to "
+            @"HID injection");
     if (!vp_devmode_load())
       NSLog(@"vphoned: XPC unavailable, devmode disabled");
     vp_location_load();
